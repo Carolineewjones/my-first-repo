@@ -1,0 +1,606 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Modern Neutral Counter</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts Inter & Outfit -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@500;700;800&display=swap" rel="stylesheet">
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        display: ['Outfit', 'sans-serif'],
+                    },
+                    animation: {
+                        'pulse-subtle': 'pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+                        'pop': 'pop 0.15s ease-out',
+                    },
+                    keyframes: {
+                        pop: {
+                            '0%': { transform: 'scale(0.95)' },
+                            '50%': { transform: 'scale(1.05)' },
+                            '100%': { transform: 'scale(1)' },
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+        .counter-number {
+            font-family: 'Outfit', sans-serif;
+            font-variant-numeric: tabular-nums;
+            transition: transform 0.15s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.15s ease;
+        }
+        .btn-press {
+            transition: all 0.12s ease;
+        }
+        .btn-press:active {
+            transform: scale(0.94);
+        }
+        /* Custom scrollbar for activity drawer */
+        ::-webkit-scrollbar {
+            width: 5px;
+        }
+        ::-webkit-scrollbar-track {
+            background: rgba(0, 0, 0, 0.02);
+            border-radius: 9999px;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: rgba(163, 163, 163, 0.3);
+            border-radius: 9999px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: rgba(115, 115, 115, 0.5);
+        }
+    </style>
+</head>
+<body class="bg-neutral-50 text-neutral-900 min-h-screen flex flex-col justify-between items-center p-4 sm:p-6 overflow-x-hidden selection:bg-neutral-900 selection:text-white">
+
+    <!-- Top Header -->
+    <header class="w-full max-w-xl flex justify-between items-center py-2 px-1">
+        <div class="flex items-center gap-2.5">
+            <div class="w-8 h-8 rounded-xl bg-neutral-900 flex items-center justify-center shadow-md shadow-neutral-900/10">
+                <i data-lucide="calculator" class="w-4 h-4 text-white"></i>
+            </div>
+            <h1 class="font-display font-bold text-xl tracking-tight text-neutral-900">Tallyify</h1>
+        </div>
+        
+        <div class="flex items-center gap-2">
+            <!-- Sound Toggle Button -->
+            <button id="soundToggleBtn" title="Toggle Sound (M)" class="p-2.5 rounded-xl bg-white hover:bg-neutral-100 text-neutral-600 hover:text-neutral-900 border border-neutral-200/80 shadow-xs transition-all btn-press">
+                <i id="soundIcon" data-lucide="volume-2" class="w-4 h-4"></i>
+            </button>
+            
+            <!-- History Toggle Button -->
+            <button id="historyToggleBtn" title="Toggle History (H)" class="p-2.5 rounded-xl bg-white hover:bg-neutral-100 text-neutral-600 hover:text-neutral-900 border border-neutral-200/80 shadow-xs transition-all btn-press relative">
+                <i data-lucide="history" class="w-4 h-4"></i>
+                <span id="historyBadge" class="absolute -top-1 -right-1 w-2.5 h-2.5 bg-neutral-900 rounded-full hidden ring-2 ring-neutral-50"></span>
+            </button>
+
+            <!-- Reset Counter Button -->
+            <button id="resetModalBtn" title="Reset Counter (R)" class="p-2.5 rounded-xl bg-white hover:bg-neutral-100 text-neutral-600 hover:text-neutral-900 border border-neutral-200/80 shadow-xs transition-all btn-press">
+                <i data-lucide="rotate-ccw" class="w-4 h-4"></i>
+            </button>
+        </div>
+    </header>
+
+    <!-- Main Interactive Card -->
+    <main class="w-full max-w-xl my-auto py-6 flex flex-col items-center">
+        
+        <div class="w-full bg-white border border-neutral-200/80 rounded-3xl p-6 sm:p-8 shadow-xl shadow-neutral-200/50 relative overflow-hidden flex flex-col items-center">
+            
+            <!-- Background Glow Decor -->
+            <div id="bgGlow" class="absolute -top-24 -left-24 w-60 h-60 bg-neutral-200/40 rounded-full blur-3xl pointer-events-none transition-all duration-500"></div>
+            <div class="absolute -bottom-24 -right-24 w-60 h-60 bg-neutral-100/60 rounded-full blur-3xl pointer-events-none"></div>
+
+            <!-- Step Size Presets -->
+            <div class="w-full flex items-center justify-between mb-6 bg-neutral-100/80 p-1.5 rounded-2xl border border-neutral-200/60">
+                <span class="text-xs font-semibold text-neutral-500 px-3 uppercase tracking-wider">Step</span>
+                <div class="flex items-center gap-1">
+                    <button data-step="1" class="step-btn px-3 py-1.5 rounded-xl text-xs font-semibold transition-all bg-neutral-900 text-white shadow-xs">1</button>
+                    <button data-step="5" class="step-btn px-3 py-1.5 rounded-xl text-xs font-semibold transition-all text-neutral-500 hover:text-neutral-900 hover:bg-neutral-200/50">5</button>
+                    <button data-step="10" class="step-btn px-3 py-1.5 rounded-xl text-xs font-semibold transition-all text-neutral-500 hover:text-neutral-900 hover:bg-neutral-200/50">10</button>
+                    <button data-step="100" class="step-btn px-3 py-1.5 rounded-xl text-xs font-semibold transition-all text-neutral-500 hover:text-neutral-900 hover:bg-neutral-200/50">100</button>
+                </div>
+            </div>
+
+            <!-- Counter Primary Display -->
+            <div class="relative w-full flex flex-col items-center justify-center my-6 group cursor-pointer" id="valueContainer" title="Click to set custom value">
+                <span id="counterValue" class="counter-number text-7xl sm:text-9xl font-extrabold tracking-tight text-neutral-900 select-none">
+                    0
+                </span>
+                <div class="opacity-0 group-hover:opacity-100 transition-opacity absolute -bottom-4 text-xs font-medium text-neutral-600 flex items-center gap-1 bg-white shadow-md px-3 py-1 rounded-full border border-neutral-200">
+                    <i data-lucide="edit-2" class="w-3 h-3 text-neutral-500"></i> Direct edit
+                </div>
+            </div>
+
+            <!-- Controls Section -->
+            <div class="w-full grid grid-cols-2 gap-4 mt-4">
+                <!-- Decrement Button -->
+                <button id="decrementBtn" class="btn-press flex flex-col items-center justify-center py-6 sm:py-8 rounded-2xl bg-neutral-100 hover:bg-neutral-200/70 border border-neutral-200 text-neutral-800 hover:text-neutral-950 transition-all shadow-xs group">
+                    <i data-lucide="minus" class="w-8 h-8 sm:w-10 sm:h-10 group-hover:scale-110 transition-transform text-neutral-700"></i>
+                    <span class="text-xs font-semibold mt-2 text-neutral-500 group-hover:text-neutral-800">Decrease</span>
+                </button>
+
+                <!-- Increment Button -->
+                <button id="incrementBtn" class="btn-press flex flex-col items-center justify-center py-6 sm:py-8 rounded-2xl bg-neutral-900 hover:bg-neutral-800 border border-neutral-800 text-white transition-all shadow-md shadow-neutral-900/10 group">
+                    <i data-lucide="plus" class="w-8 h-8 sm:w-10 sm:h-10 group-hover:scale-110 transition-transform"></i>
+                    <span class="text-xs font-semibold mt-2 text-neutral-300">Increase</span>
+                </button>
+            </div>
+
+            <!-- Secondary Quick Actions -->
+            <div class="w-full grid grid-cols-2 gap-3 mt-4">
+                <button id="subTenBtn" class="py-2.5 px-3 rounded-xl bg-neutral-100/80 hover:bg-neutral-200/60 text-neutral-600 hover:text-neutral-900 border border-neutral-200/60 text-xs font-medium transition-all flex items-center justify-center gap-1">
+                    <i data-lucide="chevrons-down" class="w-3.5 h-3.5"></i> -<span class="step-label">1</span>
+                </button>
+                <button id="addTenBtn" class="py-2.5 px-3 rounded-xl bg-neutral-100/80 hover:bg-neutral-200/60 text-neutral-600 hover:text-neutral-900 border border-neutral-200/60 text-xs font-medium transition-all flex items-center justify-center gap-1">
+                    +<span class="step-label">1</span> <i data-lucide="chevrons-up" class="w-3.5 h-3.5"></i>
+                </button>
+            </div>
+
+        </div>
+
+        <!-- Shortcut Hint Footer -->
+        <div class="mt-6 flex flex-wrap items-center justify-center gap-3 text-xs text-neutral-500">
+            <span class="flex items-center gap-1"><kbd class="px-1.5 py-0.5 rounded bg-white border border-neutral-200 font-mono text-[10px] text-neutral-700 shadow-2xs">Space</kbd> or <kbd class="px-1.5 py-0.5 rounded bg-white border border-neutral-200 font-mono text-[10px] text-neutral-700 shadow-2xs">↑</kbd> Add</span>
+            <span class="flex items-center gap-1"><kbd class="px-1.5 py-0.5 rounded bg-white border border-neutral-200 font-mono text-[10px] text-neutral-700 shadow-2xs">↓</kbd> Subtract</span>
+            <span class="flex items-center gap-1"><kbd class="px-1.5 py-0.5 rounded bg-white border border-neutral-200 font-mono text-[10px] text-neutral-700 shadow-2xs">R</kbd> Reset</span>
+        </div>
+
+    </main>
+
+    <!-- History Drawer / Panel (Hidden by default) -->
+    <div id="historyDrawer" class="fixed inset-y-0 right-0 w-full max-w-xs bg-white/95 backdrop-blur-2xl border-l border-neutral-200 p-6 shadow-2xl transform translate-x-full transition-transform duration-300 ease-in-out z-40 flex flex-col">
+        <div class="flex items-center justify-between pb-4 border-b border-neutral-200">
+            <div class="flex items-center gap-2">
+                <i data-lucide="history" class="w-5 h-5 text-neutral-800"></i>
+                <h2 class="font-display font-bold text-lg text-neutral-900">Activity Log</h2>
+            </div>
+            <button id="closeHistoryBtn" class="p-1 rounded-lg text-neutral-400 hover:text-neutral-900 hover:bg-neutral-100 transition-all">
+                <i data-lucide="x" class="w-5 h-5"></i>
+            </button>
+        </div>
+
+        <!-- History Log Items Container -->
+        <div id="historyList" class="flex-1 overflow-y-auto py-4 space-y-2.5">
+            <div class="text-center text-neutral-400 py-8 text-sm">
+                No activity logged yet.
+            </div>
+        </div>
+
+        <div class="pt-4 border-t border-neutral-200 flex gap-2">
+            <button id="clearHistoryBtn" class="w-full py-2.5 rounded-xl bg-neutral-100 hover:bg-neutral-200 hover:text-neutral-900 border border-neutral-200 text-neutral-700 text-xs font-semibold transition-all">
+                Clear History
+            </button>
+        </div>
+    </div>
+
+    <!-- Edit Custom Value Modal -->
+    <div id="editModal" class="fixed inset-0 bg-neutral-950/30 backdrop-blur-sm z-50 flex items-center justify-center p-4 opacity-0 pointer-events-none transition-opacity duration-200">
+        <div class="bg-white border border-neutral-200 rounded-2xl p-6 w-full max-w-sm shadow-2xl transform scale-95 transition-transform duration-200" id="editModalCard">
+            <h3 class="font-display font-bold text-lg text-neutral-900 mb-1">Set Counter Value</h3>
+            <p class="text-xs text-neutral-500 mb-4">Enter a specific number to jump directly to it.</p>
+            <input type="number" id="customValueInput" class="w-full px-4 py-3 rounded-xl bg-neutral-50 border border-neutral-200 text-neutral-900 font-display text-xl focus:outline-none focus:border-neutral-900 focus:bg-white transition-all mb-4" placeholder="0">
+            <div class="flex gap-2 justify-end">
+                <button id="cancelEditBtn" class="px-4 py-2.5 rounded-xl bg-neutral-100 hover:bg-neutral-200 text-neutral-700 text-xs font-semibold transition-all">Cancel</button>
+                <button id="saveEditBtn" class="px-4 py-2.5 rounded-xl bg-neutral-900 hover:bg-neutral-800 text-white text-xs font-semibold transition-all shadow-xs">Save Value</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Confirm Reset Modal -->
+    <div id="resetModal" class="fixed inset-0 bg-neutral-950/30 backdrop-blur-sm z-50 flex items-center justify-center p-4 opacity-0 pointer-events-none transition-opacity duration-200">
+        <div class="bg-white border border-neutral-200 rounded-2xl p-6 w-full max-w-sm shadow-2xl transform scale-95 transition-transform duration-200" id="resetModalCard">
+            <div class="w-10 h-10 rounded-full bg-neutral-100 text-neutral-800 flex items-center justify-center mb-3">
+                <i data-lucide="rotate-ccw" class="w-5 h-5"></i>
+            </div>
+            <h3 class="font-display font-bold text-lg text-neutral-900 mb-1">Reset Counter?</h3>
+            <p class="text-xs text-neutral-500 mb-5">Are you sure you want to set the counter back to zero? This action will be logged in history.</p>
+            <div class="flex gap-2 justify-end">
+                <button id="cancelResetBtn" class="px-4 py-2.5 rounded-xl bg-neutral-100 hover:bg-neutral-200 text-neutral-700 text-xs font-semibold transition-all">Cancel</button>
+                <button id="confirmResetBtn" class="px-4 py-2.5 rounded-xl bg-neutral-900 hover:bg-neutral-800 text-white text-xs font-semibold transition-all shadow-xs">Reset to 0</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // State variables
+        let count = 0;
+        let step = 1;
+        let soundEnabled = true;
+        let history = [];
+
+        // DOM elements
+        const counterValueEl = document.getElementById('counterValue');
+        const incrementBtn = document.getElementById('incrementBtn');
+        const decrementBtn = document.getElementById('decrementBtn');
+        const addTenBtn = document.getElementById('addTenBtn');
+        const subTenBtn = document.getElementById('subTenBtn');
+        const resetModalBtn = document.getElementById('resetModalBtn');
+        const soundToggleBtn = document.getElementById('soundToggleBtn');
+        const soundIcon = document.getElementById('soundIcon');
+        const historyToggleBtn = document.getElementById('historyToggleBtn');
+        const historyDrawer = document.getElementById('historyDrawer');
+        const closeHistoryBtn = document.getElementById('closeHistoryBtn');
+        const historyList = document.getElementById('historyList');
+        const clearHistoryBtn = document.getElementById('clearHistoryBtn');
+        const historyBadge = document.getElementById('historyBadge');
+        
+        // Modal elements
+        const valueContainer = document.getElementById('valueContainer');
+        const editModal = document.getElementById('editModal');
+        const editModalCard = document.getElementById('editModalCard');
+        const customValueInput = document.getElementById('customValueInput');
+        const cancelEditBtn = document.getElementById('cancelEditBtn');
+        const saveEditBtn = document.getElementById('saveEditBtn');
+
+        const resetModal = document.getElementById('resetModal');
+        const resetModalCard = document.getElementById('resetModalCard');
+        const cancelResetBtn = document.getElementById('cancelResetBtn');
+        const confirmResetBtn = document.getElementById('confirmResetBtn');
+
+        // Audio Context setup using Web Audio API
+        let audioCtx = null;
+
+        function playSound(type) {
+            if (!soundEnabled) return;
+            try {
+                if (!audioCtx) {
+                    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                }
+                if (audioCtx.state === 'suspended') {
+                    audioCtx.resume();
+                }
+
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+
+                const now = audioCtx.currentTime;
+
+                if (type === 'increment') {
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(440, now);
+                    osc.frequency.exponentialRampToValueAtTime(880, now + 0.08);
+                    gain.gain.setValueAtTime(0.12, now);
+                    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.08);
+                    osc.start(now);
+                    osc.stop(now + 0.08);
+                } else if (type === 'decrement') {
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(350, now);
+                    osc.frequency.exponentialRampToValueAtTime(200, now + 0.08);
+                    gain.gain.setValueAtTime(0.12, now);
+                    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.08);
+                    osc.start(now);
+                    osc.stop(now + 0.08);
+                } else if (type === 'reset') {
+                    osc.type = 'triangle';
+                    osc.frequency.setValueAtTime(300, now);
+                    osc.frequency.exponentialRampToValueAtTime(150, now + 0.2);
+                    gain.gain.setValueAtTime(0.15, now);
+                    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.2);
+                    osc.start(now);
+                    osc.stop(now + 0.2);
+                }
+            } catch (e) {
+                console.warn('Audio play error:', e);
+            }
+        }
+
+        // Initialize state from LocalStorage
+        function loadState() {
+            const savedCount = localStorage.getItem('tallyify_count');
+            if (savedCount !== null) {
+                count = parseInt(savedCount, 10) || 0;
+            }
+
+            const savedStep = localStorage.getItem('tallyify_step');
+            if (savedStep !== null) {
+                step = parseInt(savedStep, 10) || 1;
+            }
+
+            const savedSound = localStorage.getItem('tallyify_sound');
+            if (savedSound !== null) {
+                soundEnabled = savedSound === 'true';
+            }
+
+            const savedHistory = localStorage.getItem('tallyify_history');
+            if (savedHistory !== null) {
+                try {
+                    history = JSON.parse(savedHistory);
+                } catch (e) {
+                    history = [];
+                }
+            }
+
+            updateStepUI();
+            updateSoundUI();
+            renderCounter(false);
+            renderHistory();
+        }
+
+        // Save state to LocalStorage
+        function saveState() {
+            localStorage.setItem('tallyify_count', count);
+            localStorage.setItem('tallyify_step', step);
+            localStorage.setItem('tallyify_sound', soundEnabled);
+            localStorage.setItem('tallyify_history', JSON.stringify(history));
+        }
+
+        // Update Counter Display
+        function renderCounter(animate = true) {
+            counterValueEl.textContent = count.toLocaleString();
+            
+            if (animate) {
+                counterValueEl.style.transform = 'scale(1.15)';
+                setTimeout(() => {
+                    counterValueEl.style.transform = 'scale(1)';
+                }, 120);
+            }
+        }
+
+        // Change Count Helper
+        function updateCount(delta, type = 'manual') {
+            const previous = count;
+            count += delta;
+            saveState();
+            renderCounter(true);
+            
+            if (delta > 0) playSound('increment');
+            else if (delta < 0) playSound('decrement');
+
+            logHistory(type, delta, previous, count);
+        }
+
+        // Directly set count
+        function setCount(newValue) {
+            const previous = count;
+            count = newValue;
+            saveState();
+            renderCounter(true);
+            playSound('increment');
+            logHistory('set', newValue - previous, previous, count);
+        }
+
+        // Reset Counter
+        function resetCount() {
+            const previous = count;
+            count = 0;
+            saveState();
+            renderCounter(true);
+            playSound('reset');
+            logHistory('reset', 0, previous, 0);
+        }
+
+        // Add history record
+        function logHistory(actionType, delta, prevVal, newVal) {
+            const entry = {
+                id: Date.now(),
+                timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' }),
+                actionType,
+                delta,
+                prevVal,
+                newVal
+            };
+            history.unshift(entry);
+            if (history.length > 50) history.pop();
+            saveState();
+            renderHistory();
+        }
+
+        // Render History Items
+        function renderHistory() {
+            if (history.length === 0) {
+                historyList.innerHTML = `
+                    <div class="text-center text-neutral-400 py-12 text-sm flex flex-col items-center">
+                        <i data-lucide="inbox" class="w-8 h-8 mb-2 opacity-40"></i>
+                        <span>No history logged yet</span>
+                    </div>`;
+                historyBadge.classList.add('hidden');
+                lucide.createIcons();
+                return;
+            }
+
+            historyBadge.classList.remove('hidden');
+
+            historyList.innerHTML = history.map(item => {
+                let badgeClass = 'bg-neutral-100 text-neutral-800 border-neutral-200';
+                let actionText = `+${item.delta}`;
+                
+                if (item.actionType === 'reset') {
+                    badgeClass = 'bg-neutral-200 text-neutral-900 border-neutral-300';
+                    actionText = 'Reset';
+                } else if (item.delta < 0) {
+                    badgeClass = 'bg-neutral-200 text-neutral-900 border-neutral-300';
+                    actionText = `${item.delta}`;
+                } else if (item.actionType === 'set') {
+                    badgeClass = 'bg-neutral-100 text-neutral-900 border-neutral-300';
+                    actionText = `Set to ${item.newVal}`;
+                }
+
+                return `
+                    <div class="p-3 rounded-xl bg-neutral-50 border border-neutral-200/80 flex items-center justify-between text-xs">
+                        <div>
+                            <div class="font-medium text-neutral-800">${item.prevVal} → <span class="text-neutral-950 font-bold">${item.newVal}</span></div>
+                            <div class="text-[10px] text-neutral-400 mt-0.5">${item.timestamp}</div>
+                        </div>
+                        <span class="px-2 py-0.5 rounded-md border ${badgeClass} font-mono font-semibold">
+                            ${actionText}
+                        </span>
+                    </div>
+                `;
+            }).join('');
+
+            lucide.createIcons();
+        }
+
+        // Set Step Size
+        function setStep(newStep) {
+            step = newStep;
+            saveState();
+            updateStepUI();
+        }
+
+        function updateStepUI() {
+            document.querySelectorAll('.step-btn').forEach(btn => {
+                const btnStep = parseInt(btn.dataset.step, 10);
+                if (btnStep === step) {
+                    btn.className = 'step-btn px-3 py-1.5 rounded-xl text-xs font-semibold transition-all bg-neutral-900 text-white shadow-xs';
+                } else {
+                    btn.className = 'step-btn px-3 py-1.5 rounded-xl text-xs font-semibold transition-all text-neutral-500 hover:text-neutral-900 hover:bg-neutral-200/50';
+                }
+            });
+
+            document.querySelectorAll('.step-label').forEach(el => {
+                el.textContent = step;
+            });
+        }
+
+        function updateSoundUI() {
+            if (soundEnabled) {
+                soundIcon.setAttribute('data-lucide', 'volume-2');
+                soundToggleBtn.classList.remove('text-neutral-400');
+                soundToggleBtn.classList.add('text-neutral-600');
+            } else {
+                soundIcon.setAttribute('data-lucide', 'volume-x');
+                soundToggleBtn.classList.remove('text-neutral-600');
+                soundToggleBtn.classList.add('text-neutral-400');
+            }
+            lucide.createIcons();
+        }
+
+        // Modal Open / Close Helpers
+        function openModal(modalEl, cardEl) {
+            modalEl.classList.remove('pointer-events-none');
+            modalEl.classList.remove('opacity-0');
+            modalEl.classList.add('opacity-100');
+            cardEl.classList.remove('scale-95');
+            cardEl.classList.add('scale-100');
+        }
+
+        function closeModal(modalEl, cardEl) {
+            modalEl.classList.remove('opacity-100');
+            modalEl.classList.add('opacity-0');
+            cardEl.classList.remove('scale-100');
+            cardEl.classList.add('scale-95');
+            setTimeout(() => {
+                modalEl.classList.add('pointer-events-none');
+            }, 200);
+        }
+
+        // Event Listeners Initialization
+        function initEvents() {
+            incrementBtn.addEventListener('click', () => updateCount(step));
+            decrementBtn.addEventListener('click', () => updateCount(-step));
+            addTenBtn.addEventListener('click', () => updateCount(step));
+            subTenBtn.addEventListener('click', () => updateCount(-step));
+
+            // Step selection
+            document.querySelectorAll('.step-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    setStep(parseInt(e.target.dataset.step, 10));
+                });
+            });
+
+            // Sound Toggle
+            soundToggleBtn.addEventListener('click', () => {
+                soundEnabled = !soundEnabled;
+                saveState();
+                updateSoundUI();
+            });
+
+            // History Drawer toggle
+            historyToggleBtn.addEventListener('click', () => {
+                historyDrawer.classList.remove('translate-x-full');
+            });
+            closeHistoryBtn.addEventListener('click', () => {
+                historyDrawer.classList.add('translate-x-full');
+            });
+            clearHistoryBtn.addEventListener('click', () => {
+                history = [];
+                saveState();
+                renderHistory();
+            });
+
+            // Reset modal
+            resetModalBtn.addEventListener('click', () => openModal(resetModal, resetModalCard));
+            cancelResetBtn.addEventListener('click', () => closeModal(resetModal, resetModalCard));
+            confirmResetBtn.addEventListener('click', () => {
+                resetCount();
+                closeModal(resetModal, resetModalCard);
+            });
+
+            // Edit direct value modal
+            valueContainer.addEventListener('click', () => {
+                customValueInput.value = count;
+                openModal(editModal, editModalCard);
+                setTimeout(() => customValueInput.select(), 100);
+            });
+            cancelEditBtn.addEventListener('click', () => closeModal(editModal, editModalCard));
+            saveEditBtn.addEventListener('click', () => {
+                const val = parseInt(customValueInput.value, 10);
+                if (!isNaN(val)) {
+                    setCount(val);
+                }
+                closeModal(editModal, editModalCard);
+            });
+
+            // Keyboard Shortcuts
+            window.addEventListener('keydown', (e) => {
+                if (document.activeElement.tagName === 'INPUT') {
+                    if (e.key === 'Enter') {
+                        saveEditBtn.click();
+                    }
+                    if (e.key === 'Escape') {
+                        closeModal(editModal, editModalCard);
+                    }
+                    return;
+                }
+
+                if (e.key === 'ArrowUp' || e.key === ' ') {
+                    e.preventDefault();
+                    updateCount(step);
+                } else if (e.key === 'ArrowDown') {
+                    e.preventDefault();
+                    updateCount(-step);
+                } else if (e.key === 'r' || e.key === 'R') {
+                    openModal(resetModal, resetModalCard);
+                } else if (e.key === 'm' || e.key === 'M') {
+                    soundToggleBtn.click();
+                } else if (e.key === 'h' || e.key === 'H') {
+                    historyDrawer.classList.toggle('translate-x-full');
+                } else if (e.key === 'Escape') {
+                    closeModal(resetModal, resetModalCard);
+                    closeModal(editModal, editModalCard);
+                    historyDrawer.classList.add('translate-x-full');
+                }
+            });
+        }
+
+        // Initialize App
+        window.addEventListener('DOMContentLoaded', () => {
+            lucide.createIcons();
+            loadState();
+            initEvents();
+        });
+    </script>
+</body>
+</html>
